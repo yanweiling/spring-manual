@@ -18,7 +18,7 @@ public class ManualApplicationContext {
     //所有扫描到的bean的定义
     ConcurrentHashMap<String,BeanDefinition> beanDefinitionMap=new ConcurrentHashMap<>();
 
-    public ManualApplicationContext(Class configClass) throws ClassNotFoundException {
+    public ManualApplicationContext(Class configClass) throws Exception {
         this.configClass=configClass;
         //解析配置类：1.找到CompontScan注解---->2.扫描路径--3.解析对象，生成BeanDefinition-4.将对象放在beanDefinitionMap中
         scan(configClass);
@@ -26,7 +26,7 @@ public class ManualApplicationContext {
         for (Map.Entry<String,BeanDefinition> entry : beanDefinitionMap.entrySet()) {
             BeanDefinition beanDefinition=entry.getValue();
             if(beanDefinition.getScope().equals("singleton")){
-               Object bean=createBean(beanDefinition);
+               Object bean=createBean(entry.getKey(),beanDefinition);
                singleObjects.put(entry.getKey(),bean);
             }
             
@@ -35,19 +35,27 @@ public class ManualApplicationContext {
     }
 
     //创建bean的方法
-    private Object createBean(BeanDefinition beanDefinition){
+    private Object createBean(String beanName,BeanDefinition beanDefinition) throws Exception{
         Class clazz=beanDefinition.getClazz();
         try {
             Object instance = clazz.getDeclaredConstructor().newInstance();
 
-            // 给属性赋值,依赖注入
+            //1 给属性赋值,依赖注入
             for (Field declaredField : clazz.getDeclaredFields()) {
                 if(declaredField.isAnnotationPresent(Autowire.class)){
                     Object bean=getBean(declaredField.getName());//根据属性名称，获取bean
+                    if(bean==null){
+                        throw new Exception(declaredField.getName()+"没有在spring容器中找到");
+                    }
                     declaredField.setAccessible(true);
                     declaredField.set(instance,bean);
                 }
             }
+            //2.aware回调
+            if (instance instanceof BeanNameAware) {
+                ((BeanNameAware) instance).setBeanName(beanName);
+            }
+
 
             return instance;
         } catch (InstantiationException e) {
@@ -119,14 +127,14 @@ public class ManualApplicationContext {
       2.找到类需要对该类进行解析
         在@1的位置也需要对类进行解析，所以解析类，我们可以抽象出来
      */
-    public Object getBean(String beanName){
+    public Object getBean(String beanName) throws Exception {
         if(beanDefinitionMap.containsKey(beanName)){
             BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
             if(beanDefinition.getScope().equals("singleton")){
                 return singleObjects.get(beanName);
             }else{
                 //创建这个对象
-                return createBean(beanDefinition);
+                return createBean(beanName,beanDefinition);
 
             }
 
