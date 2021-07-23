@@ -17,5 +17,8 @@
      因为多个地方需要对类进行解析，所以我们统一做解析，这里就需要用到BeanDefinition，这个表示：类的定义
      
      解析一个类，解析完成以后，就生成一个BeanDefinition
+##
+  study01 :实现单例bean，原型bean，并将bean初始化到spirng容器中
+  study02：实现autowire注入     
      
      
