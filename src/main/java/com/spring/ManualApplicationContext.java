@@ -56,6 +56,11 @@ public class ManualApplicationContext {
                 ((BeanNameAware) instance).setBeanName(beanName);
             }
 
+            //3.初始化
+            if (instance instanceof InitializingBean) {
+                ((InitializingBean) instance).afterPropertiesSet();
+            }
+
 
             return instance;
         } catch (InstantiationException e) {
