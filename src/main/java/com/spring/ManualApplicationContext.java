@@ -4,6 +4,8 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,6 +19,8 @@ public class ManualApplicationContext {
     ConcurrentHashMap<String,Object> singleObjects=new ConcurrentHashMap<>();
     //所有扫描到的bean的定义
     ConcurrentHashMap<String,BeanDefinition> beanDefinitionMap=new ConcurrentHashMap<>();
+
+    private List<BeanPostProcessor> beanPostProcessorList=new ArrayList<>();
 
     public ManualApplicationContext(Class configClass) throws Exception {
         this.configClass=configClass;
@@ -56,11 +60,20 @@ public class ManualApplicationContext {
                 ((BeanNameAware) instance).setBeanName(beanName);
             }
 
+            //初始化之前
+            for (BeanPostProcessor beanPostProcessor : beanPostProcessorList) {
+                instance=beanPostProcessor.postProcessBeforeInitialization(instance,beanName);
+            }
+
             //3.初始化
             if (instance instanceof InitializingBean) {
                 ((InitializingBean) instance).afterPropertiesSet();
             }
 
+            //初始化之后
+            for (BeanPostProcessor beanPostProcessor : beanPostProcessorList) {
+                instance=beanPostProcessor.postProcessAfterInitialization(instance,beanName);
+            }
 
             return instance;
         } catch (InstantiationException e) {
@@ -75,7 +88,7 @@ public class ManualApplicationContext {
         return null;
     }
 
-    private void scan(Class configClass) throws ClassNotFoundException {
+    private void scan(Class configClass) throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
 
         CompontScan compontScanAnnotaion= (CompontScan) configClass.getDeclaredAnnotation(CompontScan.class);
         //获取扫描路径
@@ -106,7 +119,14 @@ public class ManualApplicationContext {
                 Class<?> clazz = classLoader.loadClass(className); //快捷键 classLoader.loadClass("").var回车
                 //然后判断这个类是否有注解
                 if (clazz.isAnnotationPresent(Compont.class)) {
+
                     //表示当前这个类是一个Bean
+                    //判断是否实现BeanPostProcessor
+                    if (BeanPostProcessor.class.isAssignableFrom(clazz)) {
+                        BeanPostProcessor instance= (BeanPostProcessor) clazz.getDeclaredConstructor().newInstance();
+                        beanPostProcessorList.add(instance);
+                    }
+
                     //判断是单例bean还是原型bean ，@1.需要对类进行解析
                     Compont compontAnnotation = clazz.getDeclaredAnnotation(Compont.class);
                     String beanName=compontAnnotation.value();

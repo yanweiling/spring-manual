@@ -21,5 +21,7 @@
   study01 :实现单例bean，原型bean，并将bean初始化到spirng容器中
   study02：实现autowire注入
   study03: 实现BeanNameAware ---aware回调     
-     
+  study04： 初始化   
+  study05：BeanPostProcessor ：需求场景，在bean对象实例化之前或者之后，要个性化做一些处理
+           在spring容器扫描@Compont类的时候，要判断这个类，是否集实现了BeanPostProcessor
      
