@@ -24,4 +24,9 @@
   study04： 初始化   
   study05：BeanPostProcessor ：需求场景，在bean对象实例化之前或者之后，要个性化做一些处理
            在spring容器扫描@Compont类的时候，要判断这个类，是否集实现了BeanPostProcessor
+  study06： AOP实现：
+           需求：想办法将userSerivce.test()实现以AOP的方式实现
+               1.需要从容器中获取UserService的代理对象
+               问题：代理对象在什么时候生成的呢？
+                    在beanPostProcessor初始化后生成的         
      
