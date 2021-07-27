@@ -18,16 +18,23 @@ public class MyBeanPostProcessor  implements BeanPostProcessor {
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
         System.out.println("初始化后....");
+        System.out.println("beanName:"+beanName);
         if("userService".equals(beanName)){
             Object instance = Proxy.newProxyInstance(MyBeanPostProcessor.class.getClassLoader(), bean.getClass().getInterfaces(), new InvocationHandler() {
                 @Override
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-                    System.out.println("执行代理对象内容。。。");
+                    System.out.println("执行代理对象内容。。。"+beanName+"."+method.getName());
                     return method.invoke(bean,args);
                 }
             });
+            System.out.println("代理对象"+instance);
             return instance;
         }
+        if("orderService".equals(beanName)){
+
+            //todo 采用cglib动态代理
+        }
+        System.out.println("原生对象:"+bean);
         return bean;
 
     }
